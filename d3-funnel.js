@@ -25,6 +25,7 @@
 	 * @param {string} options.fillType     The section background type. Either "solid" or "gradient".
 	 * @param {bool}   options.isInverted   Whether or not the funnel should be inverted to a pyramid.
 	 * @param {bool}   options.hoverEffects Whether or not the funnel hover effects should be shown.
+	 * @param {bool}   options.dynamicHeight
 	 */
 	function D3Funnel ( data, options )
 	{
@@ -51,7 +52,8 @@
 			curveHeight : 20,
 			fillType : "solid",
 			isInverted : false,
-			hoverEffects : false
+			hoverEffects : false,
+			dynamicHeight : false
 		};
 		var settings = defaults;
 		var keys = Object.keys ( options );
@@ -92,6 +94,7 @@
 		this.fillType = settings.fillType;
 		this.isInverted = settings.isInverted;
 		this.hoverEffects = settings.hoverEffects;
+		this.dynamicHeight = settings.dynamicHeight;
 
 		// Calculate the bottom left x position
 		this.bottomLeftX = ( this.width - this.bottomWidth ) / 2;
@@ -236,6 +239,9 @@
 	{
 
 		var paths = [];
+		var percents = [];
+		var sum = 0;
+		var i = 0;
 
 		// Initialize velocity
 		var dx = this.dx;
@@ -266,9 +272,28 @@
 			prevHeight = 10;
 		}  // End if
 
+		if ( this.dynamicHeight )
+		{
+
+			sum = 0;
+
+			for ( i = 0; i < this.data.length; i++ )
+			{
+				sum += parseInt ( this.data [ i ][ 1 ].replace ( /,/g, "" ), 10 );
+			}  // End for
+
+			for ( i = 0; i < this.data.length; i++ )
+			{
+				percents.push ( parseInt ( this.data [ i ][ 1 ].replace ( /,/g, "" ), 10 ) / sum );
+			}  // End for
+
+			console.log ( percents );
+
+		}  // End if
+
 		// Create the path definition for each funnel section
 		// Remember to loop back to the beginning point for a closed path
-		for ( var i = 0; i < this.data.length; i++ )
+		for ( i = 0; i < this.data.length; i++ )
 		{
 
 			// Stop velocity for pinched sections
@@ -291,6 +316,11 @@
 					dx = i < this.bottomPinch ? 0 : this.dx;
 				}  // End if
 
+			}  // End if
+
+			if ( this.dynamicHeight )
+			{
+				dy = percents [ i ] * this.height;
 			}  // End if
 
 			// Calculate the position of next section
